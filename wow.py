@@ -32,8 +32,7 @@ def monthToNum(month):
 		    'Nov' : 11,
 		    'Dec' : 12
 	}[month]
-
-
+	
 def numToMonth(num):
 	return{
 		    1 : 'Jan',
@@ -83,19 +82,19 @@ if not isInternetOn:
 	exit()
 
 mydb = mysql.connector.connect(
-  host = "localhost",
-  user = "root",
-  passwd = "qwerty"
+	host = "localhost",
+	user = "root",
+	passwd = "qwerty"
 )
 
 cursor = mydb.cursor()
 cursor.execute("CREATE DATABASE IF NOT EXISTS sde")
 
 mydb = mysql.connector.connect(
-  host = "localhost",
-  user = "root",
-  passwd = "qwerty",
-  database = "sde"
+	host = "localhost",
+	user = "root",
+	passwd = "qwerty",
+	database = "sde"
 )
 
 cursor = mydb.cursor()
@@ -115,7 +114,7 @@ SMTPserver = 'smtp.gmail.com'
 sender = 'waitorwatch@gmail.com'
 destination = email
 password = "W@it0rW@tch"
-body = ""
+body = ''
 subject = "TV Series Information"
 
 sql = "INSERT INTO waitorwatch VALUES (%s, %s)"
@@ -126,31 +125,39 @@ mydb.commit()
 tv_series = [s.strip().capitalize() for s in tv_series.split(',')]
 
 for series in tv_series:
-	series.replace(" ", "+")
 	date = []
 	temp = 0
 
-	wiki = "https://www.imdb.com/find?q=" + series
-	page = requests.get(wiki).text
-	soup = BeautifulSoup(page, 'lxml')
+	try:
+		wiki = "https://www.imdb.com/find?q=" + series
+		page = requests.get(wiki).text
+		soup = BeautifulSoup(page, 'lxml')
 
-	search = soup.find('div', class_='findSection').table.find('tr').find('td').a
-	href = search['href']
-	id = href.split('/')[2]
+		search = soup.find('div', class_='findSection').table.find('tr').find('td').a
+		href = search['href']
+		id = href.split('/')[2]
 
-	wiki = "https://www.imdb.com/title/" + id
-	page = requests.get(wiki).text
-	soup = BeautifulSoup(page, 'lxml')
+		wiki = "https://www.imdb.com/title/" + id
+		page = requests.get(wiki).text
+		soup = BeautifulSoup(page, 'lxml')
 
-	season_div = soup.find('div', class_='seasons-and-year-nav')
-	season = season_div.find_all('div')[2].find('a').text
+		season_div = soup.find('div', class_='seasons-and-year-nav')
+		season = season_div.find_all('div')[2].find('a').text
+		
+		rating_div = soup.find('div', class_='ratingValue')
+		rating = rating_div.strong.span.text
+
+		title_div = soup.find('div', class_='title_wrapper')
+		series = title_div.h1.text.strip()
+		
+		wiki = "https://www.imdb.com/title/" + id + "/episodes?season=" + season
+		page = requests.get(wiki).text
+		soup = BeautifulSoup(page, 'lxml')
+		
+	except:
+		print "No TV Series found with name " + series + "."
+		continue
 	
-	rating_div = soup.find('div', class_='ratingValue')
-	rating = rating_div.strong.span.text
-
-	wiki = "https://www.imdb.com/title/" + id + "/episodes?season=" + season
-	page = requests.get(wiki).text
-	soup = BeautifulSoup(page, 'lxml')
 	body += "TV Series name: " + series + "\n"
 	body += "IMDb Rating: " + rating + "\n"
 	
@@ -169,6 +176,9 @@ for series in tv_series:
 			break
 	
 	body += "Status: " + showStatus(temp) + "\n\n"
+		
+if body=='':
+	exit()
 	
 try:
 	msg = MIMEMultipart()
@@ -188,4 +198,4 @@ try:
 		conn.quit()
 
 except:
-	print "Unable to send email! Please try again later."
+	print "Incorrect email! PLease type in a correct email."
