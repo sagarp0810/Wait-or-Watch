@@ -2,7 +2,7 @@ import sys
 import os
 import re
 import requests
-import urllib2
+import urllib
 import mysql.connector
 import datetime
 from bs4 import BeautifulSoup
@@ -12,9 +12,9 @@ from email.MIMEText import MIMEText
 
 def isInternetOn():
     try:
-        urllib2.urlopen('https://www.google.com/', timeout=1)
+        urllib.urlopen('https://www.google.com/', timeout=1)
         return True
-    except urllib2.URLError as err: 
+    except urllib.URLError as err: 
         return False
 
 def monthToNum(month):
@@ -110,19 +110,19 @@ print "TV Series:",
 tv_series = raw_input()
 print
 
-SMTPserver = 'smtp.gmail.com'
-sender = 'waitorwatch@gmail.com'
-destination = email
-password = "W@it0rW@tch"
-body = ''
-subject = "TV Series Information"
-
 sql = "INSERT INTO waitorwatch VALUES (%s, %s)"
 val = (email, tv_series)
 cursor.execute(sql, val)
 mydb.commit()
 
-tv_series = [s.strip().capitalize() for s in tv_series.split(',')]
+SMTPserver = 'smtp.gmail.com'
+sender = 'waitorwatch@gmail.com'
+destination = email
+password = "W@it0rW@tch"
+subject = "TV Series Information"
+body = ''
+
+tv_series = [s.strip() for s in tv_series.split(',')]
 
 for series in tv_series:
 	date = []
@@ -135,9 +135,9 @@ for series in tv_series:
 
 		search = soup.find('div', class_='findSection').table.find('tr').find('td').a
 		href = search['href']
-		id = href.split('/')[2]
+		tv_id = href.split('/')[2]
 
-		wiki = "https://www.imdb.com/title/" + id
+		wiki = "https://www.imdb.com/title/" + tv_id
 		page = requests.get(wiki).text
 		soup = BeautifulSoup(page, 'lxml')
 
@@ -150,16 +150,18 @@ for series in tv_series:
 		title_div = soup.find('div', class_='title_wrapper')
 		series = title_div.h1.text.strip()
 		
-		wiki = "https://www.imdb.com/title/" + id + "/episodes?season=" + season
+		poster_div = soup.find('div', class_='poster')
+		poster = poster_div.a.img
+		link = poster['src']
+		filename = series + ".jpg"
+		
+		wiki = "https://www.imdb.com/title/" + tv_id + "/episodes?season=" + season
 		page = requests.get(wiki).text
 		soup = BeautifulSoup(page, 'lxml')
 		
 	except:
 		print "No TV Series found with name " + series + "."
 		continue
-	
-	body += "TV Series name: " + series + "\n"
-	body += "IMDb Rating: " + rating + "\n"
 	
 	for i in soup.find_all('div', class_='airdate'):
 		date.append(dateToNum(i.text.strip()))
@@ -174,18 +176,26 @@ for series in tv_series:
 		if d==0:
 			temp = 2
 			break
-	
-	body += "Status: " + showStatus(temp) + "\n\n"
-		
+			
+	body += "<div style='width:40%; height:200px; float:left;'>"
+	body += "<a href='https://www.imdb.com/title/" + tv_id + "'>"
+	body += "<img alt='" + series + " Poster' src='" + link + "' height=192px></a></div>"
+	body += "<div style='width:60%; height:200px; float:left;'><br><br>"
+	body += "<b>TV Series name: </b>" + series + "<br><br>"
+	body += "<b>IMDb Rating: </b>" + rating + "<br><br>"
+	body += "<b>Status: </b>" + showStatus(temp) + "</div><hr>"	
+
 if body=='':
 	exit()
-	
+else:
+	body = body[0:-4]
+
 try:
 	msg = MIMEMultipart()
 	msg['From'] = sender
 	msg['To'] = destination
 	msg['Subject'] = subject
-	msg.attach(MIMEText(body))
+	msg.attach(MIMEText(body, 'html'))
 
 	conn = SMTP_SSL(SMTPserver)
 	conn.set_debuglevel(False)
