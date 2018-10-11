@@ -23,4 +23,6 @@ NOTE - Make sure your MySQL is configured with password="qwerty". If not you can
 
 ## Example
 
-![Input](input.gif) | ![Output](output.gif)
+| Input | Output |
+|:---:|:---:|
+| ![Input](input.gif) | ![Output](output.gif) |
