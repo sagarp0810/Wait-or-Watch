@@ -58,7 +58,7 @@ def dateToNum(s):
 		date = int(s[-4:len(s)])*10000
 		date += monthToNum(s[-9:-6])*100
 		date += int(s[0:2])
-	return date	
+	return date
 	
 def numToDate(d):
 	date = d[6:8] + " " + numToMonth(int(d[4:6])) + ", " + d[0:4]
@@ -68,8 +68,10 @@ def showStatus(d):
 	if d==0:
 		status = "The show has finished streaming all its episodes."
 	elif d==1:
-		status = "The next season is confirmed, dates yet to be announced."
+		status = "The dates of first episode of season one is yet to be announced."
 	elif d==2:
+		status = "The next season is confirmed, dates yet to be announced."
+	elif d==3:
 		status = "The next episode dates are not announced yet."
 	elif d%100==32:
 		status = "The next season begins in " + str(d/10000) + "."
@@ -114,7 +116,7 @@ def getStatus(tv_series):
 		temp = 0
 
 		try:
-			wiki = "https://www.imdb.com/find?q=" + series				# search tv series on imdb
+			wiki = "https://www.imdb.com/find?q=" + series.replace(' ','%2B') + "&s=tt&ttype=tv"		# search tv series on imdb
 			page = requests.get(wiki).text
 			soup = BeautifulSoup(page, 'lxml')
 
@@ -155,18 +157,20 @@ def getStatus(tv_series):
 			d = i.text.strip()
 			if len(d)==9:
 				d = "32 " + d
-				
 			date.append(dateToNum(d))				# list having dates of all episodes in yyyymmdd format
 			
 		for d in date:
 			if date[0]==0:
-				temp = 1
+				if season==1:
+					temp = 1
+				else:
+					temp=2
 				break
 			if d>cur_date:
 				temp = d
 				break
 			if d==0:
-				temp = 2
+				temp = 3
 				break
 		
 		status = showStatus(temp)	
