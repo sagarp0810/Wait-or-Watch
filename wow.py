@@ -129,27 +129,34 @@ def getStatus(tv_series):
 			season_div = soup.find('div', class_='seasons-and-year-nav')
 			season = season_div.find_all('div')[2].find('a').text				# latest season number
 			
-			rating_div = soup.find('div', class_='ratingValue')
-			rating = rating_div.strong.span.text
-
-			title_div = soup.find('div', class_='title_wrapper')
-			series = title_div.h1.text.strip()
-			
-			poster_div = soup.find('div', class_='poster')
-			poster = poster_div.a.img
-			link = poster['src']								# link for the poster
-			filename = series + ".jpg"
-			
-			wiki = "https://www.imdb.com/title/" + tv_id + "/episodes?season=" + season
-			page = requests.get(wiki).text
-			soup = BeautifulSoup(page, 'lxml')
-			
 		except:
 			print "No TV Series found with name " + series + "."
 			continue				# input tv series which are not found will not be included in email
 		
+		try:
+			rating_div = soup.find('div', class_='ratingValue')
+			rating = rating_div.strong.span.text
+		except:
+			rating = "Unrated"								# if tv series is not rated
+			
+		title_div = soup.find('div', class_='title_wrapper')
+		series = title_div.h1.text.strip()
+		
+		poster_div = soup.find('div', class_='poster')
+		poster = poster_div.a.img
+		link = poster['src']								# link for the poster
+		filename = series + ".jpg"
+		
+		wiki = "https://www.imdb.com/title/" + tv_id + "/episodes?season=" + season
+		page = requests.get(wiki).text
+		soup = BeautifulSoup(page, 'lxml')
+		
 		for i in soup.find_all('div', class_='airdate'):
-			date.append(dateToNum(i.text.strip()))				# list having dates of all episodes in yyyymmdd format
+			d = i.text.strip()
+			if len(d)==9:
+				d = "32 " + d
+				
+			date.append(dateToNum(d))				# list having dates of all episodes in yyyymmdd format
 			
 		for d in date:
 			if date[0]==0:
